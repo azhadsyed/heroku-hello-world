@@ -1,0 +1,22 @@
+.threadReplies {
+  white-space: pre-wrap;
+}
+.title {
+  font-size: 30px;
+  text-align: center;
+}
+
+.threadReplies {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  width: auto;
+  padding: 10px;
+}
+
+.replyForm {
+  height: 100px;
+  width: 500px;
+  padding-top: 0;
+  padding-left: 0;
+  line-height: 1em;
+  text-align: left;
+}

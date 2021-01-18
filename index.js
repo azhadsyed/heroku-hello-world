@@ -1,34 +1,81 @@
-const express = require('express');
-const path = require('path');
-const generatePassword = require('password-generator');
+//dependencies
+require("dotenv").config();
 
+const express = require("express");
+const morgan = require("morgan");
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
+
+const user = process.env.mongo_user;
+const pass = process.env.mongo_password;
+const dbname = process.env.mongo_dbname;
+
+mongoose.connect(
+  "mongodb+srv://" +
+    user +
+    ":" +
+    pass +
+    "@cluster0.bf91x.mongodb.net/" +
+    dbname +
+    "?retryWrites=true&w=majority",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+);
+
+//start express
 const app = express();
 
 // Serve static files from the React app
-app.use(express.static(path.join(__dirname, 'client/build')));
+app.use(express.static(path.join(__dirname, "client/build")));
 
-// Put all API endpoints under '/api'
-app.get('/api/passwords', (req, res) => {
-    const count = 5;
+//route definitions
+const NotesRoutes = require("./api/routes/notes");
+const PasswordsRoutes = require("./api/routes/passwords");
 
-    // Generate some passwords
-    const passwords = Array.from(Array(count).keys()).map(i =>
-        generatePassword(12, false)
-    )
+//middleware
+app.use(morgan("dev"));
+app.use(
+  bodyParser.urlencoded({
+    extended: false,
+  })
+);
+app.use(bodyParser.json());
 
-    // Return them as json
-    res.json(passwords);
-
-    console.log(`Sent ${count} passwords`);
+//CORS handling
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "*");
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Methods", "GET, POST");
+    return res.status(200).json({});
+  }
+  next();
 });
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname + '/client/build/index.html'));
+// route requests
+app.use("/api/notes", NotesRoutes);
+app.use("/api/passwords", PasswordsRoutes);
+
+// bad route error
+app.use((req, res, next) => {
+  const error = new Error("Uhh...??? Path not found in API:(");
+  error.status = 404;
+  next(error);
+});
+
+//error handler
+app.use((error, req, res, next) => {
+  res.status(error.status || 500);
+  res.json({
+    error: {
+      message: error.message,
+    },
+  });
 });
 
 const port = process.env.PORT || 5000;
 app.listen(port);
 
-console.log(`Password generator listening on ${port}`);
+console.log(`API listening on ${port}`);
